@@ -6,7 +6,10 @@ Influenza segment annotation and cleaning script for Pekosz Lab Influenza Survei
 `flusort` accepts multifasta files containing H1, H3 and IBV (tested on B/Victoria) segment sequences with a strict header following >XXXXXXX_Segment# example: `JH11111_1` which would be Sample JH11111 segment 1 (PB2)
 
 ## Dependencies
-flusort is written in python v3.X.X and requires [biopython](https://biopython.org/wiki/Download) (validated on v1.83) and [numpy](https://pypi.org/project/numpy/) (validated on v1.23.4). 
+
+1. flusort is written in python v3.X.X and requires [biopython](https://biopython.org/wiki/Download) (validated on v1.83) and [numpy](https://pypi.org/project/numpy/) (validated on v1.23.4).
+
+2. ⚠️ The current build of flusort requires BLAST 2.13.0+ CLI to be accesible via your global $PATH. Please [download](https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/) and test your local blast installation with `blastn -h` prior to running. 
 
 example installation using [`pip`](https://pip.pypa.io/en/stable/installation/)
 ```
