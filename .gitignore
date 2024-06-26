@@ -1,0 +1,11 @@
+# sensistive data
+data/
+output/
+
+# working scripts
+#
+
+# system files
+**DS_Store
+*DS_Store
+

@@ -1,0 +1,12 @@
+'''
+This environment yaml accounts for all dependencies except for the BLAST+ database.
+'''
+
+name: flusort
+channels:
+    - defaults
+dependencies:
+    - pandas
+    - numpy
+    - argparse
+

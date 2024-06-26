@@ -30,7 +30,7 @@ def run_blast(input_fasta, custom_blast_db, blast_output_file):
         "-db", custom_blast_db,
         "-out", blast_output_file,
         "-word_size", "11",
-        "-num_threads", "15",
+        "-num_threads", "8",
         "-outfmt", "6 qseqid sseqid qlen slen evalue bitscore",
         "-evalue", "20"
     ]
@@ -60,26 +60,41 @@ def write_no_hits_sequences(input_fasta, blast_output_file, no_hits_output_file)
     # Run BLAST 
     subprocess.run(blast_cmd)
 
-def append_subtype_to_headers(input_fasta, output_fasta, grouped_df):
+def append_subtype_to_headers(input_fasta, output_fasta, grouped_df, delimiter="|"):
+    """
+    Append subtype information to sequence headers in the FASTA file using a specified delimiter.
+
+    Args:
+        input_fasta (str): Path to the input FASTA file.
+        output_fasta (str): Path to the output FASTA file with updated headers.
+        grouped_df (pd.DataFrame): DataFrame containing subtype information.
+        delimiter (str): Delimiter to use in the sequence headers. Defaults to '|' but can be switched to "_" or any delimiter chosen.
+        
+        new_header = f"{sequence_id}_{segment_number}{virus_type_suffix}{subtype}{delimiter}{completeness}"
+        
+        seqID and segment number are rejoined to the original sequence sequence identifier independent of the specified new delimiter in order to maintain compatability with augur and external records.
+        
+        
+    """
     records = list(SeqIO.parse(input_fasta, "fasta"))
     modified_records = []
 
     for record in records:
         sequence_id, segment_number = record.id.split("_")
-        
+
         if sequence_id in grouped_df['Sequence_ID'].values:
             row = grouped_df[grouped_df['Sequence_ID'] == sequence_id].iloc[0]
-            
+
             ha_subtype = row['H_Subtype']
             na_subtype = row['N_Subtype']
-            
-            subtype = f"_{ha_subtype}_{na_subtype}" if ha_subtype and na_subtype else ""
+
+            subtype = f"{delimiter}{ha_subtype}{delimiter}{na_subtype}" if ha_subtype and na_subtype else ""
             virus_type = row['Virus_Type']
-            virus_type_suffix = f"_{virus_type}" if virus_type else ""
+            virus_type_suffix = f"{virus_type}" if virus_type else ""
             completeness = row['Completeness']
-            
-            new_header = f"{sequence_id}_{segment_number}{virus_type_suffix}{subtype}_{completeness}"
-            
+
+            new_header = f"{sequence_id}_{segment_number}{delimiter}{sequence_id}{delimiter}{segment_number}{delimiter}{virus_type_suffix}{subtype}{delimiter}{completeness}"
+
             record.id = new_header
             record.description = ""
 
@@ -135,19 +150,11 @@ def main():
     parser.add_argument("-i", "--input_file", required=True, help="Path to the input FASTA file.")
     parser.add_argument("-db", "--blast_db", help="Path to the custom BLAST database file.")
     parser.add_argument("-o", "--output_directory", help="Path to the output directory. Defaults to 'flusort_out' in the script's directory.")
+    parser.add_argument("-d", "--delimiter", default="|", help="Delimiter to use in the FASTA headers. Defaults to '|'.")
     args = parser.parse_args()
 
     output_directory = args.output_directory or os.path.join(os.path.dirname(os.path.abspath(__file__)), "flusort_out")
     os.makedirs(output_directory, exist_ok=True)
-
-    ### testing blast input file directory #########################################
-    
-    # Write out the input FASTA to a diagnostic file
-    #diagnostic_fasta_file = os.path.join(output_directory, 'blast_input_diagnostic.fasta')
-    #shutil.copy(args.input_file, diagnostic_fasta_file)
-    #print(f"Input FASTA copied to diagnostic file: {diagnostic_fasta_file}")
-    
-    ##################################################################################
 
     pd.set_option('display.max_rows', None)
 
@@ -156,7 +163,6 @@ def main():
     blast_output_file = os.path.join(output_directory, 'blast_output.txt')
     run_blast(args.input_file, custom_blast_db, blast_output_file)
 
-    # Call the new function to write sequences without BLAST hits to a separate file
     no_hits_output_file = os.path.join(output_directory, 'sequences_without_hits.fasta')
     write_no_hits_sequences(args.input_file, blast_output_file, no_hits_output_file)
 
@@ -209,7 +215,7 @@ def main():
     pd.reset_option('display.max_rows')
 
     output_fasta_file = os.path.join(output_directory, 'fasta_with_subtype.fasta')
-    append_subtype_to_headers(args.input_file, output_fasta_file, grouped_df)
+    append_subtype_to_headers(args.input_file, output_fasta_file, grouped_df, delimiter=args.delimiter)
 
 if __name__ == "__main__":
     main()
